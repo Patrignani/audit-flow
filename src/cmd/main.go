@@ -3,33 +3,31 @@ package main
 import (
 	"context"
 	"log"
+	"time"
 
 	"github.com/Patrignani/audit-flow/src/config"
+	"github.com/Patrignani/audit-flow/src/data"
 	"github.com/Patrignani/audit-flow/src/handlers"
 	rabbitmqhelper "github.com/Patrignani/rabbit-mq-helper"
-
-	"github.com/olivere/elastic/v7"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func main() {
 
 	ctx := context.Background()
 
-	elasticClient, err := elastic.NewClient(elastic.SetURL(config.Env.ElasticUrl))
-	if err != nil {
-		log.Panicf("Erro ao conectar ao Elasticsearch: %v", err)
-	}
+	mongo := getMongoContext()
 
-	cashFlow := getCashFlowConfig(elasticClient)
+	cashFlow := getCashFlowConfig(mongo)
 
-	rabbitmqhelper.NewRabbitEventBuider(config.Env.ElasticUrl).
+	rabbitmqhelper.NewRabbitEventBuider(config.Env.RabbitUrl).
 		Subscribe("cash-flow-audit", cashFlow).
 		Run(ctx)
 
 }
 
-func getCashFlowConfig(client *elastic.Client) *rabbitmqhelper.Subscribe {
-	auditCashFlow := handlers.NewAuditoryHandler(client)
+func getCashFlowConfig(mongo data.IMongoContext) *rabbitmqhelper.Subscribe {
+	auditCashFlow := handlers.NewAuditoryHandler(mongo)
 
 	cashFlow := &rabbitmqhelper.Subscribe{
 		Exchange: rabbitmqhelper.ExchangeOptions{
@@ -66,4 +64,26 @@ func getCashFlowConfig(client *elastic.Client) *rabbitmqhelper.Subscribe {
 	}
 
 	return cashFlow
+}
+
+func getMongoContext() data.IMongoContext {
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30000*time.Second)
+	defer cancel()
+
+	mongo := data.GetInstance()
+	credential := options.Credential{
+		Username:      config.Env.MongodbUser,
+		Password:      config.Env.MongodbPassword,
+		PasswordSet:   true,
+		AuthSource:    config.Env.MongodbDatabase,
+		AuthMechanism: config.Env.MongodbAuth,
+	}
+
+	if err := mongo.Initialize(ctx, credential, "mongodb://"+config.Env.MongodbHosts+":"+config.Env.MongodbPort,
+		config.Env.MongodbDatabase, &config.Env.MongodbReplicaset); err != nil {
+		log.Println("Could not resolve Data access layer", err)
+	}
+
+	return mongo
 }

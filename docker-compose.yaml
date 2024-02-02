@@ -13,85 +13,28 @@ services:
     networks:
         - rabbitmq_go_net
 
-  es01:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.17
-    container_name: es01
-    environment:
-      - node.name=es01
-      - cluster.name=es-docker-cluster
-      - discovery.seed_hosts=es02,es03
-      - cluster.initial_master_nodes=es01,es02,es03
-      - bootstrap.memory_lock=true
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-    volumes:
-      - data01:/usr/share/elasticsearch/data
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb-audit-flow
     ports:
-      - 9200:9200
-    networks:
-      - elastic
-
-  es02:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.17
-    container_name: es02
+      - "27018:27018"
     environment:
-      - node.name=es02
-      - cluster.name=es-docker-cluster
-      - discovery.seed_hosts=es01,es03
-      - cluster.initial_master_nodes=es01,es02,es03
-      - bootstrap.memory_lock=true
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
+      MONGO_INITDB_ROOT_USERNAME: auditAdmim
+      MONGO_INITDB_ROOT_PASSWORD: f0cd47b4b7364a7e9b87e1a377b7dddf
+      MONGO_INITDB_DATABASE: audit-flow
+    networks:
+      - auth-network
+    restart: always
     volumes:
-      - data02:/usr/share/elasticsearch/data
-    networks:
-      - elastic
-      
-  es03:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.17
-    container_name: es03
-    environment:
-      - node.name=es03
-      - cluster.name=es-docker-cluster
-      - discovery.seed_hosts=es01,es02
-      - cluster.initial_master_nodes=es01,es02,es03
-      - bootstrap.memory_lock=true
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-    volumes:
-      - data03:/usr/share/elasticsearch/data
-    networks:
-      - elastic
-
-  kibana:
-    image: docker.elastic.co/kibana/kibana:7.17.17-arm64
-    ports:
-      - "5601:5601"
-    environment:
-      SERVER_NAME: kibana.example.org
-      ELASTICSEARCH_HOSTS: '["http://es01:9200","http://es02:9200","http://es03:9200"]'
-    networks:
-      - elastic
+      - ./docker-entrypoint-initdb.d/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+      - mongodb-data:/data/db
 
 volumes:
-  data01:
-    driver: local
-  data02:
-    driver: local
-  data03:
-    driver: local
+  mongodb-data:
 
 networks:
   rabbitmq_go_net:
     driver: bridge
-  elastic:
+  auth-network:
     driver: bridge
+    
