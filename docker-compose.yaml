@@ -1,6 +1,20 @@
 version: "3.2"
 
 services:
+  api:
+    build:
+      context: .
+      dockerfile: dockerfile-api
+    container_name: audit-flow-handler
+    environment:
+      - RABBIT_URL=amqp://guest:guest@rabbitmq:5672
+      - MONGODB_HOST=mongodb
+    ports:
+      - "8002:8002"
+    networks:
+      - rabbitmq_go_net
+      - db-network
+
   rabbitmq:
     image: rabbitmq:3-management-alpine
     container_name: 'rabbitmq'
@@ -12,6 +26,7 @@ services:
         - ~/.docker-conf/rabbitmq/log/:/var/log/rabbitmq
     networks:
         - rabbitmq_go_net
+    restart: always
 
   mongodb:
     image: mongo:latest
@@ -23,7 +38,7 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: f0cd47b4b7364a7e9b87e1a377b7dddf
       MONGO_INITDB_DATABASE: audit-flow
     networks:
-      - auth-network
+      - db-network
     restart: always
     volumes:
       - ./docker-entrypoint-initdb.d/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
@@ -35,6 +50,6 @@ volumes:
 networks:
   rabbitmq_go_net:
     driver: bridge
-  auth-network:
+  db-network:
     driver: bridge
     

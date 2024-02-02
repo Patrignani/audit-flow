@@ -1,0 +1,19 @@
+# Stage 1: Compilar o código
+FROM golang:alpine AS builder
+
+WORKDIR /app
+
+COPY ./ /app
+
+# Utilize -ldflags para otimizar o tamanho do binário
+RUN export GO111MODULE=on && cd /app/src/cmd && go build -ldflags="-s -w" -o main
+
+# Stage 2: Criar uma imagem menor para a produção
+FROM alpine
+
+WORKDIR /app
+
+# Copie apenas o executável compilado da Stage 1
+COPY --from=builder /app/src/cmd/main /app/src/cmd/main
+
+CMD ["/app/src/cmd/main"]

@@ -88,7 +88,7 @@ func getMongoContext() data.IMongoContext {
 
 	if err := mongo.Initialize(ctx, credential, "mongodb://"+config.Env.MongodbHosts+":"+config.Env.MongodbPort,
 		config.Env.MongodbDatabase, &config.Env.MongodbReplicaset); err != nil {
-		log.Println("Could not resolve Data access layer", err)
+		log.Panic("Could not resolve Data access layer", err)
 	}
 
 	return mongo
