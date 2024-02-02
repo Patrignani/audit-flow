@@ -28,21 +28,32 @@ func GetInstance() IMongoContext {
 	return mongoInstance
 }
 
-func (m *MoncoContext) Initialize(ctx context.Context, credential options.Credential, dbURI, dbName string, replicaset *string) error {
-	clientOptions := options.Client()
-	clientOptions.ReplicaSet = replicaset
-	client, err := mongo.Connect(ctx, clientOptions.ApplyURI(dbURI).SetAuth(credential))
-	if err != nil {
-		return err
+func (m *MoncoContext) Initialize(ctx context.Context, dbURI, dbName string, maxPoolSize uint64, MaxConnIdleTime time.Duration) error {
+
+	serverAPI := options.ServerAPI(options.ServerAPIVersion1)
+	retryWrites := true
+	options := &options.ClientOptions{
+		RetryWrites: &retryWrites,
 	}
-	err = client.Ping(ctx, readpref.Primary())
+	options = options.ApplyURI(dbURI).SetMaxPoolSize(maxPoolSize).SetMaxConnIdleTime(MaxConnIdleTime).SetServerAPIOptions(serverAPI)
+	client, err := mongo.Connect(ctx, options)
+
 	if err != nil {
 		return err
 	}
 
 	m.dbName = dbName
 	m.client = client
-	return nil
+
+	if err != nil {
+		return err
+	}
+
+	return m.Ping(ctx)
+}
+
+func (m *MoncoContext) Ping(ctx context.Context) error {
+	return m.client.Ping(ctx, readpref.Primary())
 }
 
 func (m *MoncoContext) WithTransaction(ctx context.Context, fn func(context.Context) error) error {

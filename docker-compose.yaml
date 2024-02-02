@@ -13,7 +13,7 @@ services:
       - "8002:8002"
     networks:
       - rabbitmq_go_net
-      - db-network
+    restart: always
 
   rabbitmq:
     image: rabbitmq:3-management-alpine
@@ -28,28 +28,6 @@ services:
         - rabbitmq_go_net
     restart: always
 
-  mongodb:
-    image: mongo:latest
-    container_name: mongodb-audit-flow
-    ports:
-      - "27018:27018"
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: auditAdmim
-      MONGO_INITDB_ROOT_PASSWORD: f0cd47b4b7364a7e9b87e1a377b7dddf
-      MONGO_INITDB_DATABASE: audit-flow
-    networks:
-      - db-network
-    restart: always
-    volumes:
-      - ./docker-entrypoint-initdb.d/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
-      - mongodb-data:/data/db
-
-volumes:
-  mongodb-data:
-
 networks:
   rabbitmq_go_net:
     driver: bridge
-  db-network:
-    driver: bridge
-    

@@ -12,8 +12,6 @@ import (
 	"github.com/Patrignani/audit-flow/src/models"
 	rabbitmqhelper "github.com/Patrignani/rabbit-mq-helper"
 	"go.uber.org/zap"
-
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func main() {
@@ -78,16 +76,9 @@ func getMongoContext() data.IMongoContext {
 	defer cancel()
 
 	mongo := data.GetInstance()
-	credential := options.Credential{
-		Username:      config.Env.MongodbUser,
-		Password:      config.Env.MongodbPassword,
-		PasswordSet:   true,
-		AuthSource:    config.Env.MongodbDatabase,
-		AuthMechanism: config.Env.MongodbAuth,
-	}
 
-	if err := mongo.Initialize(ctx, credential, "mongodb://"+config.Env.MongodbHosts+":"+config.Env.MongodbPort,
-		config.Env.MongodbDatabase, &config.Env.MongodbReplicaset); err != nil {
+	if err := mongo.Initialize(ctx, config.Env.MongodbAddrs, config.Env.MongodbDatabase, config.Env.MongodbMaxPoolSize, time.Duration(config.Env.MongodbMaxConnIdleTine)*time.Millisecond); err != nil {
+
 		log.Panic("Could not resolve Data access layer", err)
 	}
 

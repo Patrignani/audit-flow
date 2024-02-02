@@ -2,6 +2,7 @@ package data
 
 import (
 	"context"
+	"time"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -18,6 +19,6 @@ type IMongoContext interface {
 	Remove(ctx context.Context, collName string, query map[string]interface{}) error
 	RemoveMany(ctx context.Context, collName string, selector map[string]interface{}) error
 	WithTransaction(ctx context.Context, fn func(context.Context) error) error
-	Initialize(ctx context.Context, credential options.Credential, dbURI string, dbName string, replicaset *string) error
+	Initialize(ctx context.Context, dbURI, dbName string, maxPoolSize uint64, MaxConnIdleTime time.Duration) error
 	Disconnect()
 }
