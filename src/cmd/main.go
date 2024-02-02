@@ -8,7 +8,11 @@ import (
 	"github.com/Patrignani/audit-flow/src/config"
 	"github.com/Patrignani/audit-flow/src/data"
 	"github.com/Patrignani/audit-flow/src/handlers"
+	"github.com/Patrignani/audit-flow/src/logs"
+	"github.com/Patrignani/audit-flow/src/models"
 	rabbitmqhelper "github.com/Patrignani/rabbit-mq-helper"
+	"go.uber.org/zap"
+
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -16,9 +20,11 @@ func main() {
 
 	ctx := context.Background()
 
+	logger := logs.NewLogger(models.GetLoggingConfig())
+
 	mongo := getMongoContext()
 
-	cashFlow := getCashFlowConfig(mongo)
+	cashFlow := getCashFlowConfig(mongo, logger)
 
 	rabbitmqhelper.NewRabbitEventBuider(config.Env.RabbitUrl).
 		Subscribe("cash-flow-audit", cashFlow).
@@ -26,8 +32,8 @@ func main() {
 
 }
 
-func getCashFlowConfig(mongo data.IMongoContext) *rabbitmqhelper.Subscribe {
-	auditCashFlow := handlers.NewAuditoryHandler(mongo)
+func getCashFlowConfig(mongo data.IMongoContext, logger *zap.Logger) *rabbitmqhelper.Subscribe {
+	auditCashFlow := handlers.NewAuditoryHandler(mongo, logger)
 
 	cashFlow := &rabbitmqhelper.Subscribe{
 		Exchange: rabbitmqhelper.ExchangeOptions{
