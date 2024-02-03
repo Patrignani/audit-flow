@@ -35,11 +35,12 @@ func (c *AuditoryHandler) Run(ctx context.Context, body []byte) {
 	}
 
 	id, err := c.mongo.Insert(ctx, collection, auditory)
+	auditory.Id = id
 
 	if err != nil {
 		c.logger.Error("Error inser audit", zap.Any("error", err))
 		return
 	}
 
-	c.logger.Warn("Audit insert", zap.String("id", id))
+	c.logger.Warn("Audit insert", zap.Any("auditory", auditory))
 }
