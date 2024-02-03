@@ -24,8 +24,11 @@ func main() {
 
 	cashFlow := getCashFlowConfig(mongo, logger)
 
+	expenseControl := getExpenseControlConfig(mongo, logger)
+
 	rabbitmqhelper.NewRabbitEventBuider(config.Env.RabbitUrl).
 		Subscribe("cash-flow-audit", cashFlow).
+		Subscribe("expense-control-audit", expenseControl).
 		Run(ctx)
 
 }
@@ -68,6 +71,46 @@ func getCashFlowConfig(mongo data.IMongoContext, logger *zap.Logger) *rabbitmqhe
 	}
 
 	return cashFlow
+}
+
+func getExpenseControlConfig(mongo data.IMongoContext, logger *zap.Logger) *rabbitmqhelper.Subscribe {
+	expenseControlFlow := handlers.NewAuditoryHandler(mongo, logger)
+
+	expenseControlFlowSub := &rabbitmqhelper.Subscribe{
+		Exchange: rabbitmqhelper.ExchangeOptions{
+			Name:       "expense-control",
+			Kind:       "fanout",
+			Durable:    true,
+			AutoDelete: false,
+			Internal:   false,
+			NoWait:     false,
+			Args:       nil,
+		},
+		Queue: rabbitmqhelper.QueueOptions{
+			Durable:    false,
+			AutoDelete: false,
+			Exclusive:  true,
+			NoWait:     false,
+			Args:       nil,
+		},
+		Bind: rabbitmqhelper.BindOptions{
+			Key:      "",
+			Exchange: "expense-control",
+			NoWait:   false,
+			Args:     nil,
+		},
+		Consume: rabbitmqhelper.ConsumeOptions{
+			Consumer:  "",
+			AutoAck:   true,
+			Exclusive: false,
+			NoLocal:   false,
+			NoWait:    false,
+			Args:      nil,
+			Action:    expenseControlFlow.Run,
+		},
+	}
+
+	return expenseControlFlowSub
 }
 
 func getMongoContext() data.IMongoContext {
