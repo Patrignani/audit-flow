@@ -74,9 +74,9 @@ func getCashFlowConfig(mongo data.IMongoContext, logger *zap.Logger) *rabbitmqhe
 }
 
 func getExpenseControlConfig(mongo data.IMongoContext, logger *zap.Logger) *rabbitmqhelper.Subscribe {
-	expenseControlFlow := handlers.NewAuditoryHandler(mongo, logger)
+	expenseControl := handlers.NewAuditoryHandler(mongo, logger)
 
-	expenseControlFlowSub := &rabbitmqhelper.Subscribe{
+	expenseControlSub := &rabbitmqhelper.Subscribe{
 		Exchange: rabbitmqhelper.ExchangeOptions{
 			Name:       "expense-control",
 			Kind:       "fanout",
@@ -106,11 +106,11 @@ func getExpenseControlConfig(mongo data.IMongoContext, logger *zap.Logger) *rabb
 			NoLocal:   false,
 			NoWait:    false,
 			Args:      nil,
-			Action:    expenseControlFlow.Run,
+			Action:    expenseControl.Run,
 		},
 	}
 
-	return expenseControlFlowSub
+	return expenseControlSub
 }
 
 func getMongoContext() data.IMongoContext {
