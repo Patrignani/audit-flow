@@ -1,16 +1,16 @@
 version: "3.2"
 
 services:
-  api:
+  handler:
     build:
       context: .
-      dockerfile: dockerfile-api
+      dockerfile: dockerfile-handler
     container_name: audit-flow-handler
     environment:
       - RABBIT_URL=amqp://guest:guest@rabbitmq:5672
       - MONGODB_HOST=mongodb
     ports:
-      - "8002:8002"
+      - "8003:8003"
     networks:
       - rabbitmq_go_net
     restart: always
