@@ -33,7 +33,6 @@ func main() {
 		Subscribe("expense-control-audit", expenseControl).
 		Subscribe("estimated-spend-audit", estimatedSpend).
 		Run(ctx)
-
 }
 
 func getCashFlowConfig(mongo data.IMongoContext, logger *zap.Logger) *rabbitmqhelper.Subscribe {
@@ -42,7 +41,7 @@ func getCashFlowConfig(mongo data.IMongoContext, logger *zap.Logger) *rabbitmqhe
 	cashFlow := &rabbitmqhelper.Subscribe{
 		Exchange: rabbitmqhelper.ExchangeOptions{
 			Name:       "cash-flow",
-			Kind:       "fanout",
+			Kind:       "topic",
 			Durable:    true,
 			AutoDelete: false,
 			Internal:   false,
@@ -57,7 +56,7 @@ func getCashFlowConfig(mongo data.IMongoContext, logger *zap.Logger) *rabbitmqhe
 			Args:       nil,
 		},
 		Bind: rabbitmqhelper.BindOptions{
-			Key:      "",
+			Key:      "*",
 			Exchange: "cash-flow",
 			NoWait:   false,
 			Args:     nil,
@@ -82,7 +81,7 @@ func getExpenseControlConfig(mongo data.IMongoContext, logger *zap.Logger) *rabb
 	expenseControlSub := &rabbitmqhelper.Subscribe{
 		Exchange: rabbitmqhelper.ExchangeOptions{
 			Name:       "expense-control",
-			Kind:       "fanout",
+			Kind:       "topic",
 			Durable:    true,
 			AutoDelete: false,
 			Internal:   false,
@@ -97,7 +96,7 @@ func getExpenseControlConfig(mongo data.IMongoContext, logger *zap.Logger) *rabb
 			Args:       nil,
 		},
 		Bind: rabbitmqhelper.BindOptions{
-			Key:      "",
+			Key:      "*",
 			Exchange: "expense-control",
 			NoWait:   false,
 			Args:     nil,
@@ -122,7 +121,7 @@ func getEstimatedSpendConfig(mongo data.IMongoContext, logger *zap.Logger) *rabb
 	estimatedSendSub := &rabbitmqhelper.Subscribe{
 		Exchange: rabbitmqhelper.ExchangeOptions{
 			Name:       "estimated-spend",
-			Kind:       "fanout",
+			Kind:       "topic",
 			Durable:    true,
 			AutoDelete: false,
 			Internal:   false,
@@ -137,7 +136,7 @@ func getEstimatedSpendConfig(mongo data.IMongoContext, logger *zap.Logger) *rabb
 			Args:       nil,
 		},
 		Bind: rabbitmqhelper.BindOptions{
-			Key:      "",
+			Key:      "*",
 			Exchange: "estimated-spend",
 			NoWait:   false,
 			Args:     nil,
