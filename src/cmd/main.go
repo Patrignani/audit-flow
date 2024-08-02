@@ -28,10 +28,13 @@ func main() {
 
 	estimatedSpend := getEstimatedSpendConfig(mongo, logger)
 
+	moneyMovement := getMoneyMovementConfig(mongo, logger)
+
 	rabbitmqhelper.NewRabbitEventBuider(config.Env.RabbitUrl).
 		Subscribe("cash-flow-audit", cashFlow).
 		Subscribe("expense-control-audit", expenseControl).
 		Subscribe("estimated-spend-audit", estimatedSpend).
+		Subscribe("money-movement", moneyMovement).
 		Run(ctx)
 }
 
@@ -153,6 +156,46 @@ func getEstimatedSpendConfig(mongo data.IMongoContext, logger *zap.Logger) *rabb
 	}
 
 	return estimatedSendSub
+}
+
+func getMoneyMovementConfig(mongo data.IMongoContext, logger *zap.Logger) *rabbitmqhelper.Subscribe {
+	moneyMovementSend := handlers.NewAuditoryHandler(mongo, logger)
+
+	moneyMovementSendSub := &rabbitmqhelper.Subscribe{
+		Exchange: rabbitmqhelper.ExchangeOptions{
+			Name:       "money-movement",
+			Kind:       "topic",
+			Durable:    true,
+			AutoDelete: false,
+			Internal:   false,
+			NoWait:     false,
+			Args:       nil,
+		},
+		Queue: rabbitmqhelper.QueueOptions{
+			Durable:    false,
+			AutoDelete: false,
+			Exclusive:  true,
+			NoWait:     false,
+			Args:       nil,
+		},
+		Bind: rabbitmqhelper.BindOptions{
+			Key:      "*",
+			Exchange: "money-movement",
+			NoWait:   false,
+			Args:     nil,
+		},
+		Consume: rabbitmqhelper.ConsumeOptions{
+			Consumer:  "",
+			AutoAck:   true,
+			Exclusive: false,
+			NoLocal:   false,
+			NoWait:    false,
+			Args:      nil,
+			Action:    moneyMovementSend.Run,
+		},
+	}
+
+	return moneyMovementSendSub
 }
 
 func getMongoContext() data.IMongoContext {
