@@ -34,7 +34,7 @@ func main() {
 		Subscribe("cash-flow-audit", cashFlow).
 		Subscribe("expense-control-audit", expenseControl).
 		Subscribe("estimated-spend-audit", estimatedSpend).
-		Subscribe("money-movement", moneyMovement).
+		Subscribe("money-movement-audit", moneyMovement).
 		Run(ctx)
 }
 
