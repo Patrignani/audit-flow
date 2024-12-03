@@ -30,11 +30,14 @@ func main() {
 
 	moneyMovement := getMoneyMovementConfig(mongo, logger)
 
+	consolidated := getConsolidatedConfig(mongo, logger)
+
 	rabbitmqhelper.NewRabbitEventBuider(config.Env.RabbitUrl).
 		Subscribe("cash-flow-audit", cashFlow).
 		Subscribe("expense-control-audit", expenseControl).
 		Subscribe("estimated-spend-audit", estimatedSpend).
 		Subscribe("money-movement-audit", moneyMovement).
+		Subscribe("consolidated-audit", consolidated).
 		Run(ctx)
 }
 
@@ -196,6 +199,46 @@ func getMoneyMovementConfig(mongo data.IMongoContext, logger *zap.Logger) *rabbi
 	}
 
 	return moneyMovementSendSub
+}
+
+func getConsolidatedConfig(mongo data.IMongoContext, logger *zap.Logger) *rabbitmqhelper.Subscribe {
+	consolidatedSend := handlers.NewAuditoryHandler(mongo, logger)
+
+	consolidatedSendSub := &rabbitmqhelper.Subscribe{
+		Exchange: rabbitmqhelper.ExchangeOptions{
+			Name:       "consolidated",
+			Kind:       "topic",
+			Durable:    true,
+			AutoDelete: false,
+			Internal:   false,
+			NoWait:     false,
+			Args:       nil,
+		},
+		Queue: rabbitmqhelper.QueueOptions{
+			Durable:    false,
+			AutoDelete: false,
+			Exclusive:  true,
+			NoWait:     false,
+			Args:       nil,
+		},
+		Bind: rabbitmqhelper.BindOptions{
+			Key:      "*",
+			Exchange: "consolidated",
+			NoWait:   false,
+			Args:     nil,
+		},
+		Consume: rabbitmqhelper.ConsumeOptions{
+			Consumer:  "",
+			AutoAck:   true,
+			Exclusive: false,
+			NoLocal:   false,
+			NoWait:    false,
+			Args:      nil,
+			Action:    consolidatedSend.Run,
+		},
+	}
+
+	return consolidatedSendSub
 }
 
 func getMongoContext() data.IMongoContext {
